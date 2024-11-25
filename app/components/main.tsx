@@ -14,7 +14,6 @@ interface EncryptedImage {
     imageDocument?: any; // Add this line if 'imageDocument' is a part of the image object.
 }
 
-
 const MainScreen = () => {
     const [file, setFile] = useState<File | null>(null);
     const [data, setData] = useState<EncryptedImage[]>([]);
@@ -46,7 +45,6 @@ const MainScreen = () => {
         }
     };
     
-
     const handleUpload = async () => {
         if (!file) return alert("Please select a file to upload.");
 
