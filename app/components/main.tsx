@@ -7,9 +7,13 @@ import { Input } from "@/components/ui/input";
 
 interface EncryptedImage {
     _id: string;
-    encrypted: string; // Adjust type as per your backend response
+    encrypted: string;
     mimeType: string;
+    description?: string;
+    date?: string;
+    imageDocument?: any; // Add this line if 'imageDocument' is a part of the image object.
 }
+
 
 const MainScreen = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -31,8 +35,9 @@ const MainScreen = () => {
     const fetchData = async () => {
         setFetching(true);
         try {
-            const response = await axios.get<EncryptedImage[]>("api/encrypt-image");
-            setData(response?.data?.imageDocument);
+            const response = await axios.get<{ imageDocument: EncryptedImage[] }>("api/encrypt-image");
+            console.log("API Response:", response);  // Check the response structure
+            setData(response?.data?.imageDocument || []); // Set imageDocument if it exists
         } catch (error) {
             console.error("Error fetching image:", error);
             alert("Failed to fetch encrypted images.");
@@ -40,6 +45,7 @@ const MainScreen = () => {
             setFetching(false);
         }
     };
+    
 
     const handleUpload = async () => {
         if (!file) return alert("Please select a file to upload.");
