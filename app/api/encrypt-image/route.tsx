@@ -5,12 +5,11 @@ import Image from "@/app/module/image";
 import connectDB from "@/app/util/connectDb";
  
 export async function POST(request: Request) {
-    const db = await connectDB();
+     await connectDB();
 
     // Retrieve form data from the request
     const formData = await request.formData();
     const file = formData.get("image") as File;
-    console.log(file, 'file');
 
     if (!file) {
         return NextResponse.json({ error: "No image uploaded." }, { status: 400 });
