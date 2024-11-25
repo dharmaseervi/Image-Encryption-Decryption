@@ -3,9 +3,9 @@ import crypto from "crypto";
 import mime from "mime-types";
 import Image from "@/app/module/image";
 import connectDB from "@/app/util/connectDb";
- 
+
 export async function POST(request: Request) {
-     await connectDB();
+    await connectDB();
 
     // Retrieve form data from the request
     const formData = await request.formData();
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         // Convert the file into a buffer
         const buffer = Buffer.from(await file.arrayBuffer());
         console.log(buffer);
-        
+
 
         // Detect the MIME type based on the file extension
         const mimeType = mime.lookup(file.name) || "application/octet-stream"; // Default to "application/octet-stream" if MIME type is unknown
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
             encrypted: encrypted.toString("base64"),
             key: key.toString("base64"),
             iv: iv.toString("base64"),
-            mimeType: mimeType,  // Store the MIME type
+            mimeType: mimeType,
         });
 
         await newImage.save();  // Save to MongoDB collection 'images'
@@ -60,7 +60,9 @@ export async function GET(request: Request) {
     try {
         // Find the image document in MongoDB by ID
 
-        const imageDocument = await Image.find({});
+        const imageDocument = await Image.findOne({}).sort({ createdAt: -1 });
+        console.log(imageDocument);
+
 
         if (!imageDocument) {
             return NextResponse.json({ error: "Image not found." }, { status: 404 });

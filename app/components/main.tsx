@@ -11,7 +11,7 @@ interface EncryptedImage {
     mimeType: string;
     description?: string;
     date?: string;
-    imageDocument?: any; // Add this line if 'imageDocument' is a part of the image object.
+    imageDocument?: any;
 }
 
 const MainScreen = () => {
@@ -19,8 +19,8 @@ const MainScreen = () => {
     const [data, setData] = useState<EncryptedImage[]>([]);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
-    const [decryptedImage, setDecryptedImage] = useState<string | null>(null); // Decrypted image URL
-
+    const [decryptedImage, setDecryptedImage] = useState<string | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
     useEffect(() => {
         fetchData();
     }, []);
@@ -31,6 +31,22 @@ const MainScreen = () => {
         link.download = "decrypted_image.jpg";
         link.click();
     };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0] || null;
+        setFile(selectedFile);
+
+        if (selectedFile) {
+            // Create a preview URL using FileReader
+            const reader = new FileReader();
+            reader.onload = () => setPreview(reader.result as string);
+            reader.readAsDataURL(selectedFile);
+        } else {
+            setPreview(null);
+        }
+    };
+
+
     const fetchData = async () => {
         setFetching(true);
         try {
@@ -44,10 +60,9 @@ const MainScreen = () => {
             setFetching(false);
         }
     };
-    
+
     const handleUpload = async () => {
         if (!file) return alert("Please select a file to upload.");
-
         setLoading(true);
         const formData = new FormData();
         formData.append("image", file);
@@ -63,11 +78,13 @@ const MainScreen = () => {
             alert("Failed to upload and encrypt the image.");
         } finally {
             setLoading(false);
+            setDecryptedImage(null)
         }
     };
 
     const handleDecrypt = async (id: string) => {
         try {
+            setPreview(null);
             const response = await axios.get(`/api/decrypt-image?id=${id}`, { responseType: "blob" });
             const url = URL.createObjectURL(response.data);
             setDecryptedImage(url);
@@ -89,13 +106,26 @@ const MainScreen = () => {
                 <Input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                        setFile(e.target.files?.[0] || null)
+                        handleFileChange(e)
+                    }}
                 />
                 <Button onClick={handleUpload} disabled={loading}>
                     {loading ? "Uploading..." : "Upload & Encrypt"}
                 </Button>
             </div>
 
+            {preview && (
+                <div className="mb-4">
+                    <h2 className="text-lg font-semibold">Preview:</h2>
+                    <img
+                        src={preview}
+                        alt="Preview"
+                        className="mt-2 max-w-sm border rounded"
+                    />
+                </div>
+            )}
             {/* Encrypted Images Table */}
             <div className="mt-6">
                 {fetching ? (
@@ -104,14 +134,14 @@ const MainScreen = () => {
                     <p>No encrypted images found.</p>
                 ) : (
                     <div className="grid grid-cols-3 gap-4">
-                        {data.map((item) => (
-                            <div key={item._id} className="border rounded p-4 text-center">
-                                <p>Encrypted Image</p>
-                                <Button onClick={() => handleDecrypt(item._id)} className="mt-4">
-                                    Decrypt
-                                </Button>
-                            </div>
-                        ))}
+
+                        <div className="border rounded p-4 text-center">
+                            <p>Encrypted Image</p>
+                            <Button onClick={() => handleDecrypt(data?._id)} className="mt-4">
+                                Decrypt
+                            </Button>
+                        </div>
+
                     </div>
                 )}
             </div>
@@ -127,9 +157,11 @@ const MainScreen = () => {
                     />
                 </div>
             )}
-            {decryptedImage && (
-                <Button className="mb-5" onClick={() => downloadImage(decryptedImage)}>Download Image</Button>
-            )}
+            <div className="mt-5">
+                {decryptedImage && (
+                    <Button className="mb-5" onClick={() => downloadImage(decryptedImage)}>Download Image</Button>
+                )}
+            </div>
 
 
 
