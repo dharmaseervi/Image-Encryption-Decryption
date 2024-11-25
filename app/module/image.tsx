@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 
 // Define the schema for images
 const imageSchema = new mongoose.Schema({
+    userId: {
+        type: String,
+        required: true
+    }, // Clerk user ID
     encrypted: {
         type: String,
         required: true,
