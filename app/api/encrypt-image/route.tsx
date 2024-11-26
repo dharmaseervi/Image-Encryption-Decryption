@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     // Retrieve form data from the request
     const formData = await request.formData();
     const file = formData.get("image") as File;
+    const description = formData.get("description") as string;
+    const tags = (formData.get("tags") as string)?.split(",").map(tag => tag.trim());
 
     if (!file) {
         return NextResponse.json({ error: "No image uploaded." }, { status: 400 });
@@ -42,14 +44,15 @@ export async function POST(request: Request) {
 
         // Create and save the image document using the Image model
         const newImage = new Image({
-            userId, // Associate with the logged-in user
             encrypted: encrypted.toString("base64"),
             key: key.toString("base64"),
             iv: iv.toString("base64"),
-            mimeType: mimeType,
+            mimeType,
+            userId,
+            description,
+            tags,
         });
-
-        await newImage.save(); // Save to MongoDB collection 'images'
+        await newImage.save();
 
         // Return success response
         return NextResponse.json({ message: "Image encrypted and saved!" }, { status: 201 });
@@ -60,28 +63,54 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-    await connectDB();
+    await connectDB(); // Ensure database connection is established
 
-    // Get the current user ID from Clerk
-    const { userId } = await auth();
-
+    const { userId } = await auth(); // Get the current user ID from Clerk
 
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    try {
-        // Find the image document in MongoDB for the logged-in user
-        const imageDocument = await Image.findOne({ userId }).sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q"); // Description search query
+    const tags = searchParams.get("tags")?.split(","); // Array of tags for filtering
+    const fromDate = searchParams.get("fromDate"); // Start date filter
+    const toDate = searchParams.get("toDate"); // End date filter
 
-        if (!imageDocument) {
-            return NextResponse.json({ error: "Image not found." }, { status: 404 });
+    try {
+        // Build dynamic query filters
+        const filters: any = { userId };
+        console.log(filters);
+        
+
+        // Only apply filters if the parameters are provided
+        if (q) {
+            filters.description = { $regex: q, $options: "i" }; // Case-insensitive search by description
         }
 
-        // Return the encrypted image data
-        return NextResponse.json({ imageDocument });
+        if (tags && tags.length > 0) {
+            filters.tags = { $in: tags, }; // Matches if at least one tag is present
+            // Ensure all provided tags are in the tags array
+        }
+        console.log("Tags filter:", tags); // Log the tags parameter from the request
+        console.log("Filters object:", filters); // Log the final filters object before querying
+
+        if (fromDate || toDate) {
+            filters.date = {};
+            if (fromDate) filters.date.$gte = new Date(fromDate); // Start date filter
+            if (toDate) filters.date.$lte = new Date(toDate); // End date filter
+        }
+
+        // Query the database with the constructed filters
+        const images = await Image.find(filters);
+
+        if (images.length === 0) {
+            return NextResponse.json({ error: "No images found." }, { status: 404 });
+        }
+
+        return NextResponse.json(images); // Return the filtered images
     } catch (error) {
         console.error("Error during database operation:", error);
-        return NextResponse.json({ error: "Failed to retrieve the image." }, { status: 500 });
+        return NextResponse.json({ error: "Failed to retrieve images." }, { status: 500 });
     }
 }

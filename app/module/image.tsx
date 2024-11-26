@@ -1,34 +1,18 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-// Define the schema for images
-const imageSchema = new mongoose.Schema({
-    userId: {
-        type: String,
-        required: true
-    }, // Clerk user ID
-    encrypted: {
-        type: String,
-        required: true,
+const ImageSchema = new mongoose.Schema(
+    {
+        encrypted: { type: String, required: true },
+        key: { type: String, required: true },
+        iv: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        description: { type: String },
+        tags: { type: [String]},  
+        date: { type: Date, default: Date.now },
+        userId: { type: String, required: true }, // Add userId field
     },
-    key: {
-        type: String,
-        required: true,
-    },
-    iv: {
-        type: String,
-        required: true,
-    },
-    mimeType: {
-        type: String, // The MIME type of the image (e.g., "image/jpeg")
-        required: true, // Ensure this is provided when the image is uploaded
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-});
+    { timestamps: true }
+);
 
-// Create a model based on the schema
-const Image = mongoose.models.Image || mongoose.model('Image', imageSchema);
-
+const Image = mongoose.models.Image || mongoose.model("Image", ImageSchema);
 export default Image;

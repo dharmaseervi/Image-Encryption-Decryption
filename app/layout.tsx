@@ -3,11 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import {
   ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
   UserButton,
 } from "@clerk/nextjs";
+import Userprofile from "./components/user-profile";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -60,7 +58,10 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <div className="flex  container mx-auto p-6 border-b border-gray-200 "> <UserButton /></div>
+          <div className="flex justify-between  container mx-auto p-6 border-b border-gray-200 ">
+            <UserButton />
+            <Userprofile />
+          </div>
           <div>{children}</div>
         </body>
       </html>
